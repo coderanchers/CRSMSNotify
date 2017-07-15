@@ -25,7 +25,7 @@ public class CRSMSNotify {
 	public static final String TWILIO_NUMBER_KEY = "twilioNumber";
 	
 	@POST
-	public Response test(String sms) {
+	public Response receiveMessage(String sms) {
 		
 		
 		Map<String, String> twilioCredentials = dao.getCredentials();
@@ -60,12 +60,14 @@ public class CRSMSNotify {
 		String commentText = commentString.substring(0, commentString.indexOf("&"));
 		String comment = commentText.substring(BODY.length()).replaceAll("%3A", ":");
 
-		postComment(from, comment);
-		
-		return Response.ok().build();
+		boolean success = postComment(from, comment);
+		if(success) {
+			return Response.ok().build();
+		}
+		else return Response.status(Status.INTERNAL_SERVER_ERROR).build();
 	}
 
-	private void postComment(String from, String comment) {
+	private boolean postComment(String from, String comment) {
 
 		String postId = "";
 		String trimmedComment = "";
@@ -79,7 +81,7 @@ public class CRSMSNotify {
 		    
 		}catch (Exception ex) {
 			System.out.println("Couldn't get post from comment - aborting");
-			return;
+			return false;
 		}
 		
 		try {
@@ -94,7 +96,9 @@ public class CRSMSNotify {
 			
 		  } catch (Exception e) {
 			System.out.println("Exception posting comment to WordPress " + e.getMessage());
+			return false;
 		  }
+		return true;
 	}
 
 	private static String cleanUp(String trimmedComment) {
